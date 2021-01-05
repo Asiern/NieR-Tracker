@@ -139,7 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NierHook.cpp" />
     <ClCompile Include="NieRTracker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NierHook.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
