@@ -4,57 +4,36 @@
 #include <tchar.h>
 #include <vector>
 
-DWORD GetModuleBaseAddress(TCHAR* lpszModuleName, DWORD pID)
-{
-	DWORD dwModuleBaseAddress = 0;
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pID); // make snapshot of all modules within process
-	MODULEENTRY32 ModuleEntry32 = { 0 };
-	ModuleEntry32.dwSize = sizeof(MODULEENTRY32);
-
-	if (Module32First(hSnapshot, &ModuleEntry32)) //store first Module in ModuleEntry32
-	{
-		do
-		{
-			if (_tcscmp(ModuleEntry32.szModule, lpszModuleName) == 0) // if Found Module matches Module we look for -> done!
-			{
-				dwModuleBaseAddress = (DWORD)ModuleEntry32.modBaseAddr;
-				break;
-			}
-		} while (Module32Next(hSnapshot, &ModuleEntry32)); // go through Module entries in Snapshot and store in ModuleEntry32
-	}
-	CloseHandle(hSnapshot);
-	return dwModuleBaseAddress;
-}
+//Hook
+#include "NierHook.h"
+//Offsets
+#include "defineOffsets.h"
 
 int main()
 {
-	HWND hwnd = FindWindowA(NULL, "NieR:Automata");
-	if (hwnd == NULL)
-	{
-		std::cout << ("Game not found") << std::endl;
-		return 0;
-	}
 
-	DWORD pID;
-	GetWindowThreadProcessId(hwnd, &pID);
+	DWORD pID = GetProcessID();
+	uintptr_t baseAddress = GetModuleBaseAddress(pID, L"NieRAutomata.exe");
 	HANDLE pHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
-	if (pHandle == INVALID_HANDLE_VALUE)
-	{
-		std::cout << ("Failed to open process") << std::endl;
-		return 0;
-	}
-
-	char gameName[] = "NieRAutomata.exe";
+	//Entity address static pointer
+	uintptr_t entityAddPointer = baseAddress + 0x16053B8;
+	uintptr_t entityAddress;
+	//Get entity address from static pointer
+	ReadProcessMemory(pHandle, (LPCVOID)entityAddPointer, &entityAddress, sizeof(entityAddress), NULL);
 	float Xpos;
 	float Ypos;
 	float Zpos;
-	DWORD gameBaseAddress = 0x154C; //GetModuleBaseAddress((TCHAR*)gameName, pID);
-	DWORD entityAddPointer = gameBaseAddress + 0x16053B8;
-	DWORD entityAddress = 0x12FE30C0;
-	//ReadProcessMemory(pHandle, (LPCVOID)entityAddPointer, &entityAddress, sizeof(entityAddress), NULL);
-	DWORD XAddress = (DWORD)entityAddress + 0x50;
-	DWORD YAddress = (DWORD)entityAddress + 0x58;
-	DWORD ZAddress = (DWORD)entityAddress + 0x54;
+	while (entityAddress == 0) {
+		std::cout << "Please load a savefile" << std::endl;
+		//Get entity address from pointer at offset 0x16053B8
+		ReadProcessMemory(pHandle, (LPCVOID)entityAddPointer, &entityAddress, sizeof(entityAddress), NULL);
+		Sleep(500);
+		system("cls");
+	}
+	//Get coordinate memory address
+	uintptr_t XAddress = static_cast<uintptr_t>((DWORD)entityAddress) + X;
+	uintptr_t YAddress = static_cast<uintptr_t>((DWORD)entityAddress) + Y;
+	uintptr_t ZAddress = static_cast<uintptr_t>((DWORD)entityAddress) + Z;
 	while (true)
 	{
 		//Get Positions
