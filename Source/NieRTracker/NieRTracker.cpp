@@ -5,9 +5,9 @@
 #include <vector>
 
 //Hook
-#include "NierHook.h"
+#include "NierHook.hpp"
 //Offsets
-#include "defineOffsets.h"
+#include "defineOffsets.hpp"
 
 int main()
 {
